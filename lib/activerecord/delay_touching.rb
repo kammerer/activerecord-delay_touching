@@ -6,7 +6,9 @@ module ActiveRecord
     extend ActiveSupport::Concern
 
     # Override ActiveRecord::Base#touch.
-    def touch(*names)
+    #
+    # TODO: handle +:time+ argument
+    def touch(*names, time: nil)
       if self.class.delay_touching? && !try(:no_touching?)
         DelayTouching.add_record(self, *names)
         true
@@ -28,7 +30,7 @@ module ActiveRecord
       #   end
       #
       def delay_touching(&block)
-        DelayTouching.call &block
+        DelayTouching.call(&block)
       end
 
       # Are we currently executing in a delay_touching block?
@@ -77,6 +79,7 @@ module ActiveRecord
     def self.touch_records(attr, klass, records)
       attributes = records.first.send(:timestamp_attributes_for_update_in_model)
       attributes << attr if attr
+      attributes.uniq!
 
       if attributes.present?
         current_time = records.first.send(:current_time_from_proper_timezone)
@@ -89,9 +92,10 @@ module ActiveRecord
             next if record.destroyed?
             record.instance_eval do
               write_attribute column, current_time
-              @changed_attributes.except!(*changes.keys)
+              clear_attribute_changes(changes.keys)
             end
           end
+          state.updated column, records
         end
 
         klass.unscoped.where(klass.primary_key => records).update_all(changes)

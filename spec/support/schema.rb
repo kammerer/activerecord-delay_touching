@@ -4,7 +4,7 @@ ActiveRecord::Schema.define do
   create_table :people, :force => true do |t|
     t.string :name
 
-    t.timestamps
+    t.timestamps null: true
   end
 
   create_table :pets, :force => true do |t|
@@ -13,7 +13,7 @@ ActiveRecord::Schema.define do
     t.datetime :neutered_at
     t.datetime :fed_at
 
-    t.timestamps
+    t.timestamps null: true
   end
 
   create_table :posts, force: true do |t|
